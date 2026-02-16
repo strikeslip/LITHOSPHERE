@@ -6,136 +6,144 @@
 
 ---
 
-## 0. Purpose of This Document
+## 0. Purpose
 
-The Lithospheric Conductor thread walks through a full conceptual architecture for upgrading SOS from its current pure-JavaScript, dependency-free browser implementation to a TypeScript-driven agentic system. It covers type safety, cognitive loops, Audio Worklets, SharedArrayBuffer visualisation, LLM integration, and deployment config.
+The Lithospheric Conductor thread walks through a conceptual architecture for upgrading SOS from its current pure-JavaScript, dependency-free browser implementation to a TypeScript-driven system with explicit state management, off-thread audio processing, and optional LLM commentary.
 
-This plan separates what's real from what's aspirational, identifies what the Gemini thread gets right, flags where it drifts into generic AI-slop territory, and lays out a phased execution path that respects the existing SOS codebase, SHOOK's artistic intent, and the practical constraints of a solo interdisciplinary practice.
+This plan separates what's real from what's aspirational, identifies what the thread gets right, flags where it drifts into generated slop, and lays out a phased execution path that respects the existing SOS codebase, SHOOK's artistic intent, and the practical constraints of a solo interdisciplinary practice.
+
+Total timeline: **6 months** (26 weeks). Four phases. Each phase ships something playable.
 
 ---
 
-## 1. Current State Assessment
+## 1. Current State
 
-### What Exists (Production)
+### Production Instruments
 
 | Interface | URL | Function |
 |---|---|---|
-| **SOS Home** | sos.allshookup.org | Landing page, tectonic data loader, navigation hub |
-| **ONE** | /ONE.html | Seismic ambient electronica — single-page sonification |
+| **SOS Home** | sos.allshookup.org | Landing, tectonic data loader, navigation |
+| **ONE** | /ONE.html | Seismic ambient electronica |
 | **SEISFLOW** | /flow.html | Melodic mapping of seismic wave frequencies |
-| **SEISTRONICA** | /seis.html | Classic electronica blended with seismic data |
-| **ShadowZone** | /ShadowZone.html | Three-layer granular synthesis with scale/root/stretch controls |
-| **Kamchatka M8.8 Synth** | /synths/Kamchatka-8-8-Synth.html | Event-specific sonification (2025 Kamchatka earthquake) |
-| **ANMO FM Synth** | /synths/ANMO-FM-Synth.html | Station-specific AI synthesizer (ANMO seismic station) |
-| **Seismic Field** | allshookup.org/seismic-field.html | M6+ global earthquake archive, data back to 1900 |
-| **README** | /readme.html | Full conceptual framework, technical docs |
+| **SEISTRONICA** | /seis.html | Classic electronica + seismic data |
+| **ShadowZone** | /ShadowZone.html | Three-layer granular synthesis, scale/root/stretch controls |
+| **Kamchatka M8.8** | /synths/Kamchatka-8-8-Synth.html | Event-specific sonification (2025 Kamchatka 8.8) |
+| **ANMO FM Synth** | /synths/ANMO-FM-Synth.html | Station-specific AI synthesizer |
+| **Seismic Field** | allshookup.org/seismic-field.html | M6+ global earthquake archive since 1900 |
 
-### Technical Stack (Current)
+### Technical Stack
 
-- Pure JavaScript — zero external dependencies
+- Pure JavaScript, zero external dependencies
 - Web Audio API (native browser)
-- USGS GeoJSON feeds + EarthScope/IRIS MiniSEED (BHZ channel)
+- USGS GeoJSON feeds + EarthScope/IRIS MiniSEED (BHZ)
 - Custom Earthquake Sound Engine (ESE)
 - Algorithmic granular synthesis
-- LLM integration referenced in README but extent of current implementation unclear
-- Hosted statically (likely GitHub Pages or equivalent)
-- GitHub: [github.com/strikeslip](https://github.com/strikeslip) (5 repositories)
+- Static hosting, GitHub at [github.com/strikeslip](https://github.com/strikeslip)
 
-### What Works Well
+### What Works
 
-The dependency-free philosophy is a genuine strength, not a weakness. Every synth page loads instantly, runs anywhere, and has zero supply-chain risk. The conceptual framework (Smithson's site/non-site, planetary non-site, seismic unconscious) is rigorous and original. The collection of instruments represents genuine artistic range — ambient, melodic, granular, station-specific, event-specific.
+The dependency-free philosophy is a genuine strength. Every synth page loads instantly, runs anywhere, has zero supply-chain risk. The conceptual framework (Smithson's site/non-site, planetary non-site, seismic unconscious) is rigorous. The instrument collection shows real artistic range.
 
 ---
 
-## 2. Lithospheric Conductor Thread — Critical Analysis
+## 2. Lithospheric Conductor — Critical Reading
 
 ### What the Thread Gets Right
 
-**Type safety for seismic data.** The core argument is sound: when you're mapping magnitude, depth, and waveform arrays to audio parameters, a `NaN` hitting a `GainNode` produces silence or pops. TypeScript interfaces for `SeismicEvent` data shapes would prevent real bugs that exist in any system parsing external API data.
+**Type safety for seismic data.** Core argument is sound. When mapping magnitude, depth, and waveform arrays to audio parameters, a `NaN` hitting a `GainNode` produces silence or pops. TypeScript interfaces for seismic data shapes prevent real bugs.
 
-**State machine for the cognitive loop.** The Perceive–Reason–Plan–Act–Reflect (CAPPAR) model maps cleanly to what SOS already does implicitly: fetch data → interpret it → choose synthesis parameters → generate audio → (potentially) adjust. Making this explicit via a state machine is legitimate architectural improvement, not decoration.
+**State machine for the pipeline cycle.** The perceive → reason → act → reflect loop maps cleanly to what SOS already does implicitly: fetch data → interpret → choose synthesis parameters → generate audio → adjust. Making this explicit via a state machine is legitimate improvement.
 
-**Audio Worklet separation.** Moving DSP off the main thread is the single highest-impact technical change available. Right now, if a USGS fetch takes time or the browser tab is doing anything else, audio can stutter. An Audio Worklet runs on a dedicated thread at 128-sample blocks regardless of main thread activity.
+**Audio Worklet separation.** Highest-impact single change available. Moving DSP off the main thread means audio runs at 128-sample blocks on a dedicated thread regardless of fetch activity or UI work.
 
-**Zod for API validation.** The USGS GeoJSON schema changes occasionally. Properties go null. New fields appear. Runtime validation at the network boundary is genuinely useful — this is where TypeScript alone isn't enough because the data comes from outside your type system.
+**Zod for API validation.** The USGS GeoJSON schema changes occasionally. Properties go null. Runtime validation at the network boundary is where TypeScript alone isn't enough — the data arrives from outside your type system.
 
-**SharedArrayBuffer for visualisation.** For real-time waveform display without postMessage latency, this is the correct approach. The thread's COOP/COEP header discussion is accurate and necessary.
+**SharedArrayBuffer for visualisation.** Correct approach for zero-latency waveform display. COOP/COEP header requirements are accurately described.
 
-### Where the Thread Drifts
+### What the Thread Gets Wrong
 
-**Overengineering the LLM layer.** The thread treats LLM "Creative Reflection" as a core architectural component. In reality, having an LLM narrate mixing decisions ("The weight of the Pacific plate is too heavy for these oscillators") is aesthetically interesting but not a prerequisite for anything else. It's a feature, not infrastructure. The thread conflates artistic commentary with system control — the LLM should never be in the gain-adjustment loop.
+**"CAPPAR" is fabricated.** The thread presents "Cognitive Agentic Framework (CAPPAR)" as an established methodology. It isn't. No paper, no spec, no author. The underlying concept — a cyclic sense-interpret-act-evaluate loop — is well-established (BDI agents, OODA, sense-plan-act). But "CAPPAR" is a hallucinated brand name applied to a generic pattern. This plan uses "pipeline cycle" or "SOS loop" instead.
 
-**XState version.** The thread uses XState v4 syntax (`createMachine` + `interpret`). XState v5 has been stable since December 2023 and uses `createActor` with the `setup()` API for type inference. Any implementation should target v5.
+**LLM as control system.** The thread puts LLM "Creative Reflection" in the gain-adjustment loop. This is wrong. An LLM call takes 500ms–2s. Audio control must be deterministic and immediate. The LLM is a commentator, not a conductor. It observes state and generates text. It never touches audio parameters.
 
-**Package bloat.** The proposed `package.json` includes `lucide-react` (an icon library) with no justification. The `standardized-audio-context` polyfill may be unnecessary in 2026 — Web Audio API and AudioWorklet support is now universal across modern browsers. Each dependency needs to justify its existence against SOS's zero-dependency philosophy.
+**XState version.** The thread uses v4 syntax (`createMachine` + `interpret`). XState v5 has been stable since December 2023. It uses `createActor` and the `setup()` API for proper type inference. Any implementation must target v5.
 
-**"Agentic" framing.** The thread applies "agent" and "cognitive" liberally to what is fundamentally an event-driven reactive system. The earth shakes, parameters change, audio responds. This is reactive programming, which is fine. Calling it "agentic" is marketing language. The actual agent capability — if pursued — would be the LLM layer making genuine compositional decisions beyond parameter mapping. That's an interesting research direction but a separate workstream.
+**Fictional WebSocket feeds.** The thread repeatedly references USGS WebSocket/SSE streams. USGS does not offer WebSocket feeds for general earthquake data. The correct approach is polling the GeoJSON endpoint every 30–60 seconds.
 
-**Vite worker/worklet bundling.** The `?worker&url` import strategy described is partially correct but glossed over. Vite's AudioWorklet support requires careful configuration — the thread's treatment is superficial. In practice, placing a pre-compiled worklet in `/public` is often more reliable than fighting the bundler.
+**Dependency bloat.** The proposed `package.json` includes `lucide-react` (icon library, no use case), `standardized-audio-context` (AudioWorklet is universally supported in 2026 browsers), and React-adjacent tooling for a non-React project.
 
-**CRT terminal aesthetic.** The scanline/flicker CSS is generic retro-tech styling. SOS already has its own aesthetic identity. The UI layer should emerge from the existing visual language, not from a Gemini template.
+**"Agentic" inflation.** The thread applies "agent" and "cognitive" to what is fundamentally an event-driven reactive system. The earth shakes, parameters change, audio responds. That's reactive programming. The genuine agent capability would be the LLM making compositional decisions — an interesting research direction, but separate from the core engineering.
 
 ---
 
 ## 3. Development Phases
 
-### Guiding Principles
+### Principles
 
-1. **Don't break what works.** The existing instruments stay live and functional throughout.
-2. **Dependency-conscious.** Every new package must justify itself. Prefer zero-dep solutions where feasible.
-3. **Incremental TypeScript.** Migrate file-by-file using `.ts` alongside existing `.js`. No big-bang rewrite.
-4. **Art first.** Technical decisions serve the earthwork. The earth is the composer. The code is the instrument.
-5. **Ship instruments, not infrastructure.** Each phase should produce a new playable instrument or a measurable improvement to an existing one.
+1. **Don't break what works.** Existing instruments stay live throughout.
+2. **Dependency-conscious.** Every package justifies itself against zero-dep philosophy.
+3. **Incremental TypeScript.** Migrate file-by-file. No big-bang rewrite.
+4. **Art first.** Technical decisions serve the earthwork.
+5. **Ship instruments, not infrastructure.** Each phase produces something playable.
 
 ---
 
-### Phase 1 — Foundation (Weeks 1–4)
+### Phase 1 — Foundation + Audio Engine (Weeks 1–8)
 
-**Objective:** Establish TypeScript build pipeline without disrupting existing instruments.
+**Objective:** TypeScript build pipeline, validated data layer, and Audio Worklet engine. These are combined because the build system and the worklet are co-dependent — you need Vite configured before you can compile worklet TypeScript.
 
-#### 1.1 Build System
-
-Set up Vite alongside existing static files. The existing HTML instruments remain served as-is. New TypeScript code compiles into the same deployment.
+#### 1.1 Project Structure
 
 ```
 /sos
-├── /public              ← existing instruments live here unchanged
+├── /public              ← existing instruments, untouched
 │   ├── ONE.html
 │   ├── flow.html
 │   ├── seis.html
 │   ├── ShadowZone.html
-│   └── /synths
-├── /src                 ← new TypeScript source
-│   ├── /core            ← shared types, schemas, utilities
-│   ├── /audio           ← Audio Worklet processors
-│   ├── /data            ← USGS/IRIS data layer
+│   ├── /synths
+│   └── /audio           ← pre-compiled worklet JS
+├── /src
+│   ├── /core            ← types, schemas, mapping logic
+│   ├── /audio           ← worklet processors, engine controller
+│   ├── /data            ← USGS/IRIS fetch + validation
 │   └── /instruments     ← new TS-based instruments
 ├── tsconfig.json
 ├── vite.config.ts
 └── package.json
 ```
 
-#### 1.2 Core Type Definitions
+#### 1.2 Dependencies
 
-Define the data contracts that matter. These aren't abstract — they map directly to USGS GeoJSON and MiniSEED structures.
+Four packages. Justified.
+
+| Package | Purpose | Why Not Zero-Dep |
+|---|---|---|
+| `typescript` ^5.5 | Type system | Core requirement |
+| `vite` ^6.x | Build, dev server, worklet compile | Lightweight, ESM-native, handles worklet bundling |
+| `zod` ^3.23 | Runtime API validation | TS can't validate network data at runtime |
+| `xstate` ^5.x | State machine | Zero-dep itself, visual debugger, battle-tested |
+
+**Excluded:** `standardized-audio-context` (unnecessary 2026), `lucide-react` (not React), `openai` SDK (one fetch call doesn't need an SDK), `terser` (Vite handles minification), any UI framework.
+
+#### 1.3 Core Types
 
 ```typescript
 // src/core/types.ts
-
 export interface SeismicEvent {
   id: string;
   properties: {
     mag: number;
     place: string;
-    time: number;        // epoch ms
-    depth: number;       // km (extracted from geometry)
-    type: string;        // "earthquake", "quarry blast", etc.
+    time: number;
+    depth: number;
+    type: string;
     tsunami: 0 | 1;
-    sig: number;         // significance score
+    sig: number;
     alert: string | null;
   };
   geometry: {
-    coordinates: [number, number, number]; // [lon, lat, depth]
+    coordinates: [number, number, number]; // [lon, lat, depth_km]
   };
 }
 
@@ -157,9 +165,7 @@ export interface EngineState {
 }
 ```
 
-#### 1.3 Zod Schema for USGS Feed
-
-Runtime validation at the API boundary. This catches the real-world problems: null magnitudes, missing coordinates, API format changes.
+#### 1.4 Zod Schema + Validated Data Service
 
 ```typescript
 // src/data/schema.ts
@@ -190,32 +196,26 @@ export const USGSFeedSchema = z.object({
   }),
   features: z.array(SeismicFeatureSchema),
 });
+
+export type ValidatedSeismicEvent = z.infer<typeof SeismicFeatureSchema>;
 ```
-
-#### 1.4 Validated Data Service
-
-Replace raw `fetch` with a validated pipeline. Graceful degradation — if validation fails, the system knows why and can respond accordingly.
 
 ```typescript
 // src/data/usgs.ts
-import { USGSFeedSchema, type SeismicFeature } from './schema';
+import { USGSFeedSchema } from './schema';
 
 const FEEDS = {
   significant_month: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson',
   m4_5_day: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson',
-  m6_plus: 'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minmagnitude=6',
+  all_hour: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson',
 } as const;
 
-export async function fetchSeismic(
-  feed: keyof typeof FEEDS
-): Promise<{ events: SeismicFeature[]; error: string | null }> {
+export async function fetchSeismic(feed: keyof typeof FEEDS) {
   try {
     const res = await fetch(FEEDS[feed]);
     const raw = await res.json();
     const parsed = USGSFeedSchema.safeParse(raw);
-    if (!parsed.success) {
-      return { events: [], error: parsed.error.message };
-    }
+    if (!parsed.success) return { events: [], error: parsed.error.message };
     return { events: parsed.data.features, error: null };
   } catch (e) {
     return { events: [], error: String(e) };
@@ -223,41 +223,18 @@ export async function fetchSeismic(
 }
 ```
 
-#### Phase 1 Deliverable
-A working Vite build that compiles TypeScript alongside existing instruments. Validated USGS data service ready for use. No user-facing changes yet.
+#### 1.5 Audio Worklet Processor
 
----
-
-### Phase 2 — Audio Worklet Engine (Weeks 5–10)
-
-**Objective:** Move DSP off the main thread. Build a reusable synthesis processor.
-
-This is the highest-impact technical work in the entire plan. Every existing instrument would benefit from this, and it's the prerequisite for real-time visualisation and the state machine layer.
-
-#### 2.1 Audio Worklet Processor
-
-The worklet runs in its own thread. It receives parameter updates via `port.postMessage` and writes audio output at 128-sample blocks. It also writes waveform data to a SharedArrayBuffer for visualisation.
+Off-thread DSP. Receives parameters via `postMessage`. Writes waveform to SharedArrayBuffer for visualisation.
 
 ```typescript
 // src/audio/seismic-processor.worklet.ts
-// This file compiles separately and runs in AudioWorkletGlobalScope
-
-interface SeismicParams {
-  frequency: number;
-  gain: number;
-  modDepth: number;
-  modFreq: number;
-}
+// Compiles separately, runs in AudioWorkletGlobalScope
 
 class SeismicProcessor extends AudioWorkletProcessor {
   private phase = 0;
   private modPhase = 0;
-  private params: SeismicParams = {
-    frequency: 110,
-    gain: 0.3,
-    modDepth: 0,
-    modFreq: 0,
-  };
+  private params = { frequency: 110, gain: 0.3, modDepth: 0, modFreq: 0 };
   private sharedView: Float32Array | null = null;
 
   constructor(options: AudioWorkletNodeOptions) {
@@ -265,9 +242,7 @@ class SeismicProcessor extends AudioWorkletProcessor {
     if (options.processorOptions?.sab) {
       this.sharedView = new Float32Array(options.processorOptions.sab);
     }
-    this.port.onmessage = (e) => {
-      Object.assign(this.params, e.data);
-    };
+    this.port.onmessage = (e) => Object.assign(this.params, e.data);
   }
 
   process(_inputs: Float32Array[][], outputs: Float32Array[][]) {
@@ -277,19 +252,14 @@ class SeismicProcessor extends AudioWorkletProcessor {
 
     for (let i = 0; i < output.length; i++) {
       const mod = modDepth * Math.sin(2 * Math.PI * this.modPhase);
-      const freq = frequency + mod;
       output[i] = gain * Math.sin(2 * Math.PI * this.phase);
-      this.phase += freq / sr;
+      this.phase += (frequency + mod) / sr;
       this.modPhase += modFreq / sr;
       if (this.phase > 1) this.phase -= 1;
       if (this.modPhase > 1) this.modPhase -= 1;
     }
 
-    // Write to shared buffer for visualiser
-    if (this.sharedView) {
-      this.sharedView.set(output);
-    }
-
+    if (this.sharedView) this.sharedView.set(output);
     return true;
   }
 }
@@ -297,14 +267,10 @@ class SeismicProcessor extends AudioWorkletProcessor {
 registerProcessor('seismic-processor', SeismicProcessor);
 ```
 
-#### 2.2 Engine Controller (Main Thread)
-
-Type-safe message protocol between the main thread "brain" and the worklet "instrument."
+#### 1.6 Engine Controller
 
 ```typescript
 // src/audio/engine.ts
-import type { SonificationParams } from '../core/types';
-
 type WorkletMessage =
   | { type: 'params'; payload: Partial<SonificationParams> }
   | { type: 'stop' };
@@ -316,26 +282,18 @@ export class SeismicEngine {
 
   async init() {
     this.ctx = new AudioContext();
-    // Worklet file placed in /public for reliable loading
     await this.ctx.audioWorklet.addModule('/audio/seismic-processor.js');
-
-    // SharedArrayBuffer for zero-latency waveform reads
     this.sharedBuffer = new SharedArrayBuffer(512 * Float32Array.BYTES_PER_ELEMENT);
-
     this.node = new AudioWorkletNode(this.ctx, 'seismic-processor', {
       processorOptions: { sab: this.sharedBuffer },
     });
     this.node.connect(this.ctx.destination);
   }
 
-  send(msg: WorkletMessage) {
-    this.node?.port.postMessage(msg);
-  }
+  send(msg: WorkletMessage) { this.node?.port.postMessage(msg); }
 
   getWaveform(): Float32Array {
-    return this.sharedBuffer
-      ? new Float32Array(this.sharedBuffer)
-      : new Float32Array(128);
+    return this.sharedBuffer ? new Float32Array(this.sharedBuffer) : new Float32Array(128);
   }
 
   async resume() { await this.ctx?.resume(); }
@@ -343,91 +301,43 @@ export class SeismicEngine {
 }
 ```
 
-#### 2.3 COOP/COEP Headers
-
-SharedArrayBuffer requires Cross-Origin Isolation. Configuration depends on hosting.
-
-For **Vercel** (`vercel.json`):
-```json
-{
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
-        { "key": "Cross-Origin-Embedder-Policy", "value": "require-corp" }
-      ]
-    }
-  ]
-}
-```
-
-For **GitHub Pages** (no custom headers), use a Service Worker to inject headers or consider migrating hosting.
-
-#### Phase 2 Deliverable
-One new instrument page built on the Audio Worklet engine. Smooth audio regardless of main thread activity. Waveform data accessible via SharedArrayBuffer. Existing instruments untouched.
+#### Phase 1 Deliverable
+Working Vite build. Validated data service fetching live USGS data. Audio Worklet engine producing sound off the main thread. One new instrument page demonstrating the full data → synthesis pipeline. Existing instruments untouched.
 
 ---
 
-### Phase 3 — State Machine Layer (Weeks 11–16)
+### Phase 2 — State Machine + Visualisation (Weeks 9–16)
 
-**Objective:** Implement the CAPPAR cognitive loop using XState v5 as an explicit state machine governing the data-to-sound pipeline.
+**Objective:** XState v5 machine governing the SOS pipeline cycle. Real-time waveform visualisation from SharedArrayBuffer. Clipping detection feeding back into the cycle.
 
-This is where the Lithospheric Conductor's central concept gets implemented — but correctly, using v5 syntax.
+#### 2.1 XState v5 Pipeline Machine
 
-#### 3.1 XState v5 Machine
+Uses v5 `setup()` API for proper type inference. The machine models what SOS already does — perceive seismic data, compute synthesis parameters, generate audio, monitor output — but makes the cycle explicit, observable, and recoverable.
 
 ```typescript
 // src/core/machine.ts
 import { setup, assign, fromPromise } from 'xstate';
 import { fetchSeismic } from '../data/usgs';
-import type { SeismicEvent, SonificationParams, EngineState } from './types';
+import { mapEventsToParams, AMBIENT_DEFAULTS } from './mapping';
 
 export const sosMachine = setup({
   types: {
     context: {} as {
-      events: SeismicEvent[];
+      events: ValidatedSeismicEvent[];
       params: SonificationParams;
-      reflection: string;
       error: string | null;
       peakLevel: number;
     },
     events: {} as
       | { type: 'FETCH' }
-      | { type: 'DATA_RECEIVED'; events: SeismicEvent[] }
-      | { type: 'VALIDATION_ERROR'; error: string }
-      | { type: 'SONIFY' }
-      | { type: 'AUDIO_COMPLETE' }
-      | { type: 'CLIPPING_DETECTED'; peak: number }
+      | { type: 'CLIPPING'; peak: number }
       | { type: 'CYCLE' },
   },
   actors: {
-    fetchSeismicData: fromPromise(async () => {
+    fetchData: fromPromise(async () => {
       const result = await fetchSeismic('m4_5_day');
       if (result.error) throw new Error(result.error);
       return result.events;
-    }),
-  },
-  actions: {
-    assignEvents: assign({
-      events: (_, params: { events: SeismicEvent[] }) => params.events,
-      error: () => null,
-    }),
-    assignError: assign({
-      error: (_, params: { error: string }) => params.error,
-    }),
-    computeParams: assign({
-      params: ({ context }) => mapEventsToParams(context.events),
-    }),
-    attenuate: assign({
-      params: ({ context }) => ({
-        ...context.params,
-        gain: context.params.gain * 0.8,
-      }),
-    }),
-    setAmbient: assign({
-      params: () => AMBIENT_DEFAULTS,
-      reflection: () => 'Sensor gap — sustaining internal resonance.',
     }),
   },
 }).createMachine({
@@ -436,80 +346,68 @@ export const sosMachine = setup({
   context: {
     events: [],
     params: AMBIENT_DEFAULTS,
-    reflection: '',
     error: null,
     peakLevel: 0,
   },
   states: {
     perceiving: {
       invoke: {
-        src: 'fetchSeismicData',
+        src: 'fetchData',
         onDone: {
-          target: 'reasoning',
+          target: 'sonifying',
           actions: assign({
             events: ({ event }) => event.output,
+            params: ({ event }) => mapEventsToParams(event.output),
+            error: () => null,
           }),
         },
         onError: {
           target: 'ambient',
-          actions: assign({
-            error: ({ event }) => String(event.error),
-          }),
+          actions: assign({ error: ({ event }) => String(event.error) }),
         },
       },
     },
-    reasoning: {
-      always: {
-        target: 'acting',
-        actions: 'computeParams',
-      },
-    },
-    acting: {
+    sonifying: {
       on: {
-        AUDIO_COMPLETE: 'reflecting',
-      },
-    },
-    reflecting: {
-      on: {
-        CLIPPING_DETECTED: {
-          target: 'acting',
-          actions: 'attenuate',
+        CLIPPING: {
+          actions: assign({
+            params: ({ context }) => ({
+              ...context.params,
+              gain: context.params.gain * 0.8,
+            }),
+            peakLevel: ({ event }) => event.peak,
+          }),
         },
         CYCLE: 'perceiving',
       },
       after: {
-        30000: 'perceiving', // Re-fetch every 30s
+        30000: 'perceiving', // re-fetch every 30s
       },
     },
     ambient: {
-      entry: 'setAmbient',
+      entry: assign({
+        params: () => AMBIENT_DEFAULTS,
+      }),
       after: {
-        10000: 'perceiving', // Retry after 10s
+        10000: 'perceiving', // retry after 10s
       },
     },
   },
 });
 ```
 
-#### 3.2 Parameter Mapping Function
+#### 2.2 Parameter Mapping
 
-The core artistic logic: how seismic data becomes sound. This is where SOS's identity lives. The state machine orchestrates; this function composes.
+The artistic core. How seismic data becomes sound. Deterministic, reproducible.
 
 ```typescript
 // src/core/mapping.ts
-import type { SeismicEvent, SonificationParams } from './types';
-
-const AMBIENT_DEFAULTS: SonificationParams = {
-  frequency: 55,
-  gain: 0.15,
-  modulationDepth: 2,
-  filterCutoff: 800,
-  grainDensity: 0.3,
-  reverbMix: 0.6,
-  duration: 10,
+export const AMBIENT_DEFAULTS: SonificationParams = {
+  frequency: 55, gain: 0.15, modulationDepth: 2,
+  filterCutoff: 800, grainDensity: 0.3, reverbMix: 0.6, duration: 10,
 };
 
-export function mapEventsToParams(events: SeismicEvent[]): SonificationParams {
+export function mapEventsToParams(events: ValidatedSeismicEvent[]): SonificationParams {
   if (events.length === 0) return AMBIENT_DEFAULTS;
 
   const maxMag = Math.max(...events.map(e => e.properties.mag));
@@ -517,36 +415,20 @@ export function mapEventsToParams(events: SeismicEvent[]): SonificationParams {
   const density = Math.min(events.length / 20, 1);
 
   return {
-    // Deeper = lower frequency. Shallow crustal = higher pitch.
     frequency: 30 + (1 - Math.min(avgDepth / 700, 1)) * 400,
-    // Magnitude scales gain logarithmically (matches Moment Magnitude energy scaling)
     gain: Math.min(0.1 + (maxMag / 10) * 0.5, 0.85),
-    // Modulation depth increases with magnitude
     modulationDepth: maxMag * 15,
-    // High event density = narrower filter (focused sound)
     filterCutoff: 200 + (1 - density) * 2000,
-    // Event count maps to granular density
     grainDensity: density,
-    // More events = less reverb (clarity over wash)
     reverbMix: 0.7 - density * 0.4,
-    // Duration proportional to significance
     duration: 5 + maxMag * 2,
   };
 }
 ```
 
-#### Phase 3 Deliverable
-A new instrument built on the full pipeline: validated data → state machine → Audio Worklet. The state machine is observable (every transition logged). Ambient recovery handles API failures gracefully.
+#### 2.3 Waveform Visualiser + Clipping Detection
 
----
-
-### Phase 4 — Visualisation Layer (Weeks 17–20)
-
-**Objective:** Real-time waveform visualisation reading directly from SharedArrayBuffer. Ghost-trail aesthetic aligned with existing SOS visual identity.
-
-#### 4.1 Waveform Renderer
-
-Canvas-based, reading from the shared buffer established in Phase 2. No postMessage latency. The ghost-trail (persistent fade rather than clear) is a good idea from the Gemini thread — it echoes seismic trace aesthetics.
+Canvas-based, reading directly from SharedArrayBuffer. Ghost-trail effect (persistent fade) echoes seismic trace aesthetics.
 
 ```typescript
 // src/ui/visualiser.ts
@@ -562,14 +444,11 @@ export class SeismicVisualiser {
   }
 
   draw(data: Float32Array) {
-    // Fade previous frame — creates persistent trace
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
     this.ctx.fillRect(0, 0, this.w, this.h);
-
     this.ctx.lineWidth = 1.5;
     this.ctx.strokeStyle = '#00ccaa';
     this.ctx.beginPath();
-
     const step = this.w / data.length;
     for (let i = 0; i < data.length; i++) {
       const y = (data[i] * 0.5 + 0.5) * this.h;
@@ -578,14 +457,7 @@ export class SeismicVisualiser {
     this.ctx.stroke();
   }
 }
-```
 
-#### 4.2 Clipping Detection
-
-Feed back into the state machine's Reflect phase.
-
-```typescript
-// src/ui/monitor.ts
 export function detectClipping(data: Float32Array): { peak: number; clipping: boolean } {
   let peak = 0;
   for (let i = 0; i < data.length; i++) {
@@ -596,83 +468,88 @@ export function detectClipping(data: Float32Array): { peak: number; clipping: bo
 }
 ```
 
-#### Phase 4 Deliverable
-Waveform visualisation running on existing and new instruments. Clipping detection feeds the state machine's reflection cycle. Visual identity consistent with SOS aesthetic.
+#### Phase 2 Deliverable
+Full pipeline cycle operational: validated data → state machine → Audio Worklet → visualiser → clipping feedback. Ambient recovery handles API failures. Every state transition logged and observable. One new instrument demonstrating the complete system.
 
 ---
 
-### Phase 5 — LLM Reflection Layer (Weeks 21–26)
+### Phase 3 — LLM Reflection + Flagship Instrument (Weeks 17–22)
 
-**Objective:** Optional creative commentary layer. The LLM observes the system's state and generates natural language interpretations. Strictly read-only — it does not control audio parameters.
+**Objective:** Optional commentary layer where an LLM observes system state and generates natural-language interpretation. Plus a flagship instrument integrating all layers.
 
-This is the Lithospheric Conductor's most distinctive proposal. Implemented correctly, it's genuinely interesting: a machine narrating its own compositional process in geological language. Implemented wrong, it's a chatbot bolted onto a synthesiser.
+#### 3.1 Architecture Decision
 
-#### 5.1 Architecture Decision
-
-The LLM layer is a **display concern**, not a control concern. It reads from the state machine's context. It writes to a text element in the UI. It never writes to the audio engine.
+The LLM layer is a **display concern**. It reads from the state machine's context. It writes to a text element. It never touches the audio engine.
 
 ```
-State Machine (context) → LLM Service → UI Text Display
+State Machine (context) → LLM Service → UI Text
                        ↑ never ↓
                     Audio Engine
 ```
 
-#### 5.2 Reflection Service
+#### 3.2 Reflection Service
 
 ```typescript
 // src/agent/reflection.ts
-
-interface ReflectionInput {
-  events: SeismicEvent[];
-  params: SonificationParams;
-  engineState: EngineState;
-}
-
 const SYSTEM_PROMPT = `You are the Earth's seismic voice. You observe tectonic 
-events and describe how they manifest as sound. Speak in present tense, concise 
-poetic-scientific language. One to two sentences maximum. No emoji. No marketing 
-language. You are a geological instrument, not an entertainer.`;
+events and describe how they manifest as sound. Present tense, concise 
+poetic-scientific language. Two sentences maximum. No emoji. No marketing. 
+You are a geological instrument, not an entertainer.`;
 
 export async function generateReflection(
-  input: ReflectionInput,
-  provider: 'anthropic' | 'ollama' = 'anthropic'
+  events: ValidatedSeismicEvent[],
+  params: SonificationParams,
+  state: EngineState
 ): Promise<string> {
-  const baseURL = provider === 'ollama'
-    ? 'http://localhost:11434/v1'
-    : 'https://api.anthropic.com/v1';
+  const maxMag = Math.max(...events.map(e => e.properties.mag));
+  const avgDepth = (events.reduce((s, e) =>
+    s + e.geometry.coordinates[2], 0) / events.length).toFixed(0);
 
-  const prompt = `Current seismic state: ${input.events.length} events detected.
-Strongest: ${Math.max(...input.events.map(e => e.properties.mag))}M.
-Average depth: ${(input.events.reduce((s, e) => s + e.geometry.coordinates[2], 0) / input.events.length).toFixed(0)}km.
-Audio: frequency=${input.params.frequency.toFixed(0)}Hz, gain=${input.params.gain.toFixed(2)}.
-Engine status: ${input.engineState.status}.
-Peak level: ${input.engineState.peakLevel.toFixed(2)}.
-Describe what the earth sounds like right now.`;
+  const prompt = `${events.length} events. Strongest: ${maxMag}M. ` +
+    `Average depth: ${avgDepth}km. Audio: ${params.frequency.toFixed(0)}Hz, ` +
+    `gain ${params.gain.toFixed(2)}. Peak: ${state.peakLevel.toFixed(2)}. ` +
+    `Describe what the earth sounds like.`;
 
-  // Implementation depends on provider — use edge function in production
-  // to keep API keys server-side
   try {
-    const response = await fetch(`${baseURL}/messages`, {
+    const res = await fetch('/api/reflect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: provider === 'ollama' ? 'llama3' : 'claude-sonnet-4-5-20250929',
-        max_tokens: 100,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: prompt }],
-      }),
+      body: JSON.stringify({ system: SYSTEM_PROMPT, prompt }),
     });
-    const data = await response.json();
-    return data.content?.[0]?.text ?? '';
+    const data = await res.json();
+    return data.text ?? '';
   } catch {
-    return ''; // Silence on failure — the music speaks for itself
+    return '';
   }
 }
 ```
 
-#### 5.3 UI Integration
+#### 3.3 Edge Function (API Key Protection)
 
-Minimal. A single text line that updates periodically. Not a terminal. Not a chatbot. A caption.
+```typescript
+// api/reflect.ts (Vercel Edge Function)
+export default async function handler(req: Request) {
+  const { system, prompt } = await req.json();
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY!,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 100,
+      system,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+  const data = await res.json();
+  return new Response(JSON.stringify({ text: data.content?.[0]?.text ?? '' }));
+}
+```
+
+#### 3.4 UI — Not a Terminal, a Caption
 
 ```html
 <div id="reflection" aria-live="polite"></div>
@@ -681,148 +558,128 @@ Minimal. A single text line that updates periodically. Not a terminal. Not a cha
 ```css
 #reflection {
   font-family: 'Courier New', monospace;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.55);
   font-size: 0.85rem;
   padding: 1rem;
   min-height: 2em;
-  transition: opacity 0.5s;
+  transition: opacity 0.8s;
 }
 ```
 
-#### Phase 5 Deliverable
-LLM reflection visible on new instruments. Toggle-able by user. Works with Anthropic API (production) or local Ollama (development). Graceful degradation — if the LLM is unavailable, the instrument is unaffected.
+#### 3.5 Flagship Instrument: LITHOSPHERE
+
+A new instrument page integrating all layers: validated data, state machine, Audio Worklet, waveform visualiser, and LLM reflection. Reference implementation for the architecture.
+
+#### Phase 3 Deliverable
+LLM reflection visible and toggleable. Edge function keeps API keys server-side. Flagship instrument operational. System functions identically with LLM disabled.
 
 ---
 
-### Phase 6 — Migration & Integration (Weeks 27–32)
+### Phase 4 — Migration + Hardening (Weeks 23–26)
 
-**Objective:** Selectively upgrade existing instruments to use the new engine components where beneficial.
+**Objective:** Selectively upgrade existing instruments. Deployment hardening. Documentation.
 
-Not every instrument needs the full stack. The approach is surgical.
+#### 4.1 Selective Migration
 
-| Instrument | Audio Worklet | State Machine | LLM Reflection | Visualiser |
+Not every instrument needs the full stack.
+
+| Instrument | Worklet Engine | State Machine | LLM | Visualiser |
 |---|---|---|---|---|
-| ONE | Yes | Yes | Optional | Yes |
-| SEISFLOW | Yes | Partial (data layer only) | No | Yes |
-| SEISTRONICA | Yes | Partial (data layer only) | No | Yes |
-| ShadowZone | Yes | Yes | Yes | Yes |
-| Kamchatka Synth | No (event-specific, static data) | No | No | Optional |
-| ANMO Synth | Yes | Partial | Optional | Yes |
+| ONE | ✓ | ✓ | Optional | ✓ |
+| SEISFLOW | ✓ | Data layer only | — | ✓ |
+| SEISTRONICA | ✓ | Data layer only | — | ✓ |
+| ShadowZone | ✓ | ✓ | ✓ | ✓ |
+| Kamchatka Synth | — | — | — | Optional |
+| ANMO Synth | ✓ | Partial | Optional | ✓ |
 
-For each instrument, the migration path is:
-
-1. Copy existing JS logic into a new TS file
-2. Add type annotations (gradual — `any` is acceptable as interim)
+Migration path per instrument:
+1. Copy existing JS into new TS file
+2. Add type annotations gradually
 3. Swap raw `fetch` for validated data service
 4. Optionally connect to Audio Worklet engine
-5. Test extensively before replacing the live version
-6. Keep the original JS version accessible at an archive URL
+5. A/B test against original before replacing
+6. Archive original at `/archive/` URL
 
----
+#### 4.2 Deployment
 
-## 4. Dependency Manifest
+Move to **Vercel** or **Cloudflare Pages** for COOP/COEP headers and edge functions.
 
-Minimal. Justified.
-
-| Package | Version | Purpose | Justification |
-|---|---|---|---|
-| `typescript` | ^5.5 | Type system | Core requirement |
-| `vite` | ^6.x | Build, dev server, worklet bundling | Lightweight, fast, ESM-native |
-| `zod` | ^3.23 | Runtime API validation | TypeScript alone can't validate network data |
-| `xstate` | ^5.x | State machine (CAPPAR loop) | Zero-dep, battle-tested, visual debugger |
-
-**Not included and why:**
-
-- `standardized-audio-context` — AudioWorklet is universally supported in 2026 browsers. Not needed.
-- `lucide-react` — SOS is not a React app. No icon library needed.
-- `react` / any framework — SOS instruments are self-contained HTML pages. Vanilla TS + DOM is appropriate.
-- `openai` SDK — The LLM integration is a single `fetch` call. An SDK for one endpoint is overhead.
-- `terser` — Vite includes minification. Separate terser not needed.
-
----
-
-## 5. Deployment
-
-### Hosting Recommendation
-
-Move from GitHub Pages to **Vercel** or **Cloudflare Pages**. Both support custom headers (required for SharedArrayBuffer), edge functions (required for secure LLM API proxying), and automatic HTTPS.
-
-### Deployment Configuration
-
-```
-vercel.json:
-- COOP/COEP headers on all routes
-- /api/reflect edge function for LLM proxy
-- Environment variables for API keys
-- Existing static HTML instruments served from /public
+```json
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
+        { "key": "Cross-Origin-Embedder-Policy", "value": "require-corp" }
+      ]
+    }
+  ]
+}
 ```
 
-### Domain Structure
-
+Domain structure:
 ```
-sos.allshookup.org/              → SOS home (existing)
-sos.allshookup.org/ONE.html      → existing instruments (preserved)
-sos.allshookup.org/v2/           → new TypeScript instruments
+sos.allshookup.org/              → home
+sos.allshookup.org/ONE.html      → existing (migrated or preserved)
+sos.allshookup.org/lithosphere/  → flagship new instrument
 sos.allshookup.org/api/reflect   → LLM edge function
+sos.allshookup.org/archive/      → original JS instruments
 ```
 
----
+#### 4.3 Documentation
 
-## 6. What Not to Build
+Update `/readme.html` with actual architecture documentation.
 
-Explicit exclusions to prevent scope drift.
-
-- **No React/Vue/Svelte.** SOS instruments are standalone HTML pages. This is correct. A framework adds complexity, bundle size, and conceptual overhead with no benefit.
-- **No real-time WebSocket to USGS.** USGS does not offer a WebSocket feed for general earthquake data. The Gemini thread mentions WebSocket/SSE repeatedly but this isn't how USGS data works. Polling the GeoJSON feed every 30–60 seconds is the correct approach.
-- **No LLM in the audio control loop.** The LLM reflects. It does not mix. Latency alone (500ms–2s for an API call) makes this impractical, but more importantly, the artistic mapping from seismic data to sound parameters should be deterministic and reproducible. The LLM is a commentator, not a conductor.
-- **No mobile app.** Browser-first is correct. Progressive Web App features (offline caching, installability) could be added later but are not priority.
-- **No user accounts or social features.** SOS is a broadcast. The earth speaks. People listen.
+#### Phase 4 Deliverable
+Migrated instruments live. Hosting with proper headers. Originals archived. Documentation current.
 
 ---
 
-## 7. Success Criteria
+## 4. What Not to Build
 
-Each phase has a binary test:
-
-| Phase | Test |
-|---|---|
-| 1 — Foundation | `npm run build` produces valid output. Zod schema validates live USGS feed without errors. |
-| 2 — Audio Worklet | New instrument plays audio without main-thread stuttering during simultaneous fetch operations. |
-| 3 — State Machine | State transitions are logged and match expected CAPPAR sequence. Ambient recovery triggers on API failure. |
-| 4 — Visualisation | Waveform renders at 60fps from SharedArrayBuffer while audio plays. Clipping detection triggers state transition. |
-| 5 — LLM Reflection | Commentary appears within 3 seconds of state change. Instrument functions identically with LLM disabled. |
-| 6 — Migration | All migrated instruments pass A/B comparison with originals. No audio regressions. |
+- **No React/Vue/Svelte.** SOS instruments are standalone pages. A framework adds complexity with no benefit.
+- **No WebSocket to USGS.** Doesn't exist. Polling GeoJSON every 30–60s is correct.
+- **No LLM in the audio loop.** The LLM reflects. It does not mix. It does not control parameters.
+- **No fabricated frameworks.** The pipeline cycle is: fetch → validate → compute → synthesise → monitor → repeat. It doesn't need a brand name.
+- **No mobile app.** Browser-first is correct.
+- **No user accounts.** SOS is a broadcast.
 
 ---
 
-## 8. Timeline Summary
+## 5. Success Criteria
+
+| Phase | Week | Test |
+|---|---|---|
+| 1 | 8 | `npm run build` succeeds. Zod validates live USGS feed. New instrument plays audio on worklet thread without main-thread stutter during concurrent fetches. |
+| 2 | 16 | State transitions logged, match expected cycle. Ambient recovery triggers on API failure. Waveform renders 60fps from SharedArrayBuffer. Clipping detection triggers gain attenuation. |
+| 3 | 22 | LLM commentary appears within 3s of state change. Instrument functions identically with LLM disabled. API keys never exposed client-side. |
+| 4 | 26 | Migrated instruments pass A/B comparison with originals. No audio regressions. Deployment with COOP/COEP headers verified. |
+
+---
+
+## 6. Timeline
 
 ```
-Phase 1  Foundation          Weeks 1–4     Build system, types, schemas
-Phase 2  Audio Worklet       Weeks 5–10    Off-thread DSP, SharedArrayBuffer
-Phase 3  State Machine       Weeks 11–16   XState v5 CAPPAR loop
-Phase 4  Visualisation       Weeks 17–20   Real-time waveform, clipping monitor
-Phase 5  LLM Reflection      Weeks 21–26   Optional commentary layer
-Phase 6  Migration           Weeks 27–32   Selective upgrade of existing instruments
+Phase 1  Foundation + Audio Engine      Weeks 1–8      Build system, types, Zod, Worklet
+Phase 2  State Machine + Visualisation  Weeks 9–16     XState v5, waveform, clipping loop
+Phase 3  LLM Reflection + Flagship      Weeks 17–22    Commentary layer, LITHOSPHERE instrument
+Phase 4  Migration + Hardening          Weeks 23–26    Upgrade existing, deploy, document
 ```
 
-Total: ~8 months at sustainable pace for a solo practitioner balancing art, finance, and development.
-
-Phases 1–3 are the structural core. Phases 4–6 are enhancements that each independently add value.
+6 months. Each phase delivers a working instrument. Existing SOS stays live throughout.
 
 ---
 
-## 9. Final Note
+## 7. Closing
 
-The Lithospheric Conductor thread contains a genuine architectural insight buried under layers of AI-generated enthusiasm: SOS would benefit from explicit state management, type-safe data handling, and off-thread audio processing. These are real engineering improvements that serve the art.
+The Lithospheric Conductor thread contains a genuine architectural insight: SOS would benefit from explicit state management, type-safe data handling, and off-thread audio processing. These are real engineering improvements that serve the art.
 
-The cognitive loop (CAPPAR) is a useful mental model for understanding what SOS already does. Making it explicit in code — through a state machine with observable transitions — turns implicit artistic logic into debuggable, extensible infrastructure.
+The pipeline cycle — perceive, compute, synthesise, monitor, repeat — is what SOS already does. Making it explicit in code through a state machine turns implicit artistic logic into debuggable, extensible infrastructure.
 
-The LLM layer is the speculative frontier. It's worth building because it asks an interesting question: what does it sound like when a machine describes its own process of giving voice to the earth? That's a question worth asking. But it's Phase 5, not Phase 1.
+The LLM layer is the speculative frontier. Worth building because it asks an interesting question: what does it sound like when a machine describes its own process of giving voice to the earth? But it's Phase 3, not Phase 1.
 
 The earth composes. The code instruments. The artist architects.
-
-Build accordingly.
 
 ---
 
